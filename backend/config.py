@@ -1,5 +1,6 @@
+from typing import Annotated
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -13,7 +14,9 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
     log_level: str = "info"
-    cors_origins: list[str] = Field(
+    # NoDecode disables pydantic-settings' default JSON parse for complex types
+    # so our validator can split a plain comma-separated env value.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://127.0.0.1:5500", "http://localhost:5500"]
     )
 

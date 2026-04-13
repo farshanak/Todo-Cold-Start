@@ -24,6 +24,10 @@ class Todo(BaseModel):
 _ids = count(1)
 _todos: dict[int, Todo] = {}
 
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
+
 @app.get("/todos")
 def list_todos() -> list[Todo]:
     return list(_todos.values())
