@@ -1,0 +1,32 @@
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--strict-markers --tb=short"
+markers = [
+    "unit: Pure logic tests (no I/O)",
+    "integration: Component integration tests",
+    "behavioral: Detector/perception tests",
+]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = [
+    "backend/tests/*",
+    "backend/.venv/*",
+    "backend/__pycache__/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
