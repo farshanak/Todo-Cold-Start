@@ -1,0 +1,92 @@
+# Pre-commit hooks for Todo-Cold-Start.
+#
+# Scope: adapted to the tools this project actually uses.
+#   - Python (backend):  ruff (config in root pyproject.toml)
+#   - TypeScript (frontend): tsc --noEmit (config in frontend/tsconfig.json)
+#   - Universal: file hygiene + secret scanning
+#
+# Install:
+#   pre-commit install
+#
+# Run manually:
+#   pre-commit run --all-files
+
+fail_fast: false
+
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  # ---------------------------------------------------------------------------
+  # Layer 1: File hygiene (whitespace, newlines, YAML/JSON syntax, large files)
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.(md|txt)$|^.secrets.baseline$
+      - id: end-of-file-fixer
+        exclude: ^.secrets.baseline$
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # ---------------------------------------------------------------------------
+  # Layer 2: Ruff — Python lint (matches CI's lint job, reads pyproject.toml)
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff check (Python)
+        entry: backend/.venv/bin/ruff check
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: true
+        description: Fast Python linter; config in pyproject.toml.
+
+  # ---------------------------------------------------------------------------
+  # Layer 3: TypeScript type check (matches CI's lint job)
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: tsc-noemit
+        name: TypeScript type check
+        entry: bash -c 'cd frontend && ./node_modules/.bin/tsc --noEmit'
+        language: system
+        files: ^frontend/.*\.ts$
+        pass_filenames: false
+        description: Strict type check without emitting output files.
+
+  # ---------------------------------------------------------------------------
+  # Layer 4: Secret detection
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+            \.secrets\.baseline|
+            frontend/package-lock\.json|
+            backend/\.venv/.*|
+            frontend/node_modules/.*
+          )$
+
+  # ---------------------------------------------------------------------------
+  # Layer 5: Branch name validation (local)
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: branch-name-check
+        name: Branch naming convention
+        entry: bash scripts/check-branch-name.sh
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+        description: Enforce feat/|fix/|docs/|chore/|refactor/|test/|deps/ prefixes.
